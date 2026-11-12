@@ -1,0 +1,120 @@
+name: rank-ledger
+
+x-laravel: &laravel
+  build:
+    context: .
+    dockerfile: docker/app/Dockerfile
+  env_file:
+    - .env
+  environment:
+    APP_ENV: local
+    APP_DEBUG: 'true'
+    APP_URL: http://localhost:8080
+    DB_CONNECTION: mysql
+    DB_HOST: mysql
+    DB_PORT: '3306'
+    DB_DATABASE: rank_ledger
+    DB_USERNAME: rank_ledger
+    DB_PASSWORD: rank_ledger
+    CACHE_STORE: redis
+    QUEUE_CONNECTION: redis
+    REDIS_CLIENT: phpredis
+    REDIS_HOST: redis
+    REDIS_PORT: '6379'
+    DEMO_WEBHOOK_URL: http://webhook-receiver:8081/webhooks/leaderboard-events
+    DEMO_WEBHOOK_SECRET: ${DEMO_WEBHOOK_SECRET:-local-development-webhook-secret}
+    WEBHOOK_SIGNATURE_TOLERANCE_SECONDS: ${WEBHOOK_SIGNATURE_TOLERANCE_SECONDS:-300}
+  networks:
+    - rank-ledger
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: rank_ledger
+      MYSQL_USER: rank_ledger
+      MYSQL_PASSWORD: rank_ledger
+      MYSQL_ROOT_PASSWORD: local-root-password
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - rank-ledger
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - rank-ledger
+
+  migrate:
+    <<: *laravel
+    command: ['php', 'artisan', 'migrate', '--force', '--seed', '--no-interaction']
+    restart: 'no'
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  app:
+    <<: *laravel
+    command: ['php', 'artisan', 'serve', '--host=0.0.0.0', '--port=8000']
+    ports:
+      - '8080:8000'
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *laravel
+    command: ['php', 'artisan', 'queue:work', 'redis', '--queue=outbox,webhooks,default', '--tries=5', '--timeout=60', '--sleep=1']
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  scheduler:
+    <<: *laravel
+    command: ['php', 'artisan', 'schedule:work']
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  webhook-receiver:
+    build:
+      context: ./examples/webhook-receiver
+    environment:
+      WEBHOOK_PORT: '8081'
+      WEBHOOK_SECRET: ${DEMO_WEBHOOK_SECRET:-local-development-webhook-secret}
+      WEBHOOK_RESPONSE_STATUS: ${WEBHOOK_RESPONSE_STATUS:-200}
+      WEBHOOK_TOLERANCE_SECONDS: ${WEBHOOK_SIGNATURE_TOLERANCE_SECONDS:-300}
+    ports:
+      - '8081:8081'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:8081/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - rank-ledger
+
+volumes:
+  mysql_data:
+
+networks:
+  rank-ledger:
+    driver: bridge

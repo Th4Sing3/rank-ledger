@@ -1,0 +1,14 @@
+{
+  "name": "rank-ledger-webhook-receiver",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A dependency-free receiver used to demonstrate Rank Ledger webhook delivery.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
