@@ -103,7 +103,8 @@ final class LeaderboardApiTest extends TestCase
             ->assertCreated()
             ->assertHeader('Idempotent-Replay', 'true');
 
-        $this->assertSame($first->json(), $second->json());
+        // MySQL JSON columns normalize object member order; JSON object ordering is not part of this API contract.
+        $this->assertEquals($first->json(), $second->json());
         $this->assertDatabaseCount('score_events', 1);
         $this->assertDatabaseCount('outbox_messages', 1);
         $this->assertDatabaseHas('leaderboard_entries', [

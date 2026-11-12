@@ -50,7 +50,7 @@ final class WebhookDeliveryTest extends TestCase
                 && $request->header('X-Rank-Ledger-Event')[0] === 'event_001'
                 && $request->header('X-Rank-Ledger-Delivery')[0] !== ''
                 && preg_match('/^t=\d+,v1=[a-f\d]{64}$/', $signature) === 1
-                && $request->body() === json_encode($message->payload, JSON_UNESCAPED_SLASHES);
+                && json_decode($request->body(), true, flags: JSON_THROW_ON_ERROR) == $message->payload;
         });
 
         $this->assertDatabaseHas('webhook_deliveries', [
