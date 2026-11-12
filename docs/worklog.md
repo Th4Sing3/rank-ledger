@@ -12,11 +12,12 @@ rather than an invented billing estimate.
 | 2026-11-11 23:17:14–23:23:04 | Runtime validation setup | Added a temporary official PHP runtime for local validation, generated `composer.lock`, installed dependencies, and exercised the initial suite. | 00:05:50 |
 | 2026-11-11 23:23:04–23:31:24 | Review, correction, and verification | Reconciled documentation with the real HTTP and webhook contracts; fixed validation, headers, Docker test support, cache coverage, formatting, and stale scaffold material. | 00:08:20 |
 | 2026-11-11 23:31:24–23:32:16 | Version control and publication | Created the logical commit history and the public GitHub repository `Th4Sing3/rank-ledger`. | 00:00:52 |
+| 2026-11-11 23:32:16–23:34:20 | Publication safety check | Confirmed that `.env`, temporary tooling, and `vendor/` are ignored and absent from the Git index. The public repository remains empty pending explicit approval to push the source. | 00:02:04 |
 
 ## Total
 
-**Observed Codex duration:** **00:35:36** from first project-file creation through
-GitHub repository creation.
+**Observed Codex duration:** **00:37:40** from first project-file creation through
+the completed local verification and publication-safety check.
 
 **Human-equivalent duration:** not inferred. This log separates the observed
 automation window from any later project-management or billing estimate.
