@@ -1,6 +1,6 @@
 # Rank Ledger
 
-[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![CI](https://github.com/Th4Sing3/rank-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/Th4Sing3/rank-ledger/actions/workflows/ci.yml)
 
 Rank Ledger is a compact Laravel service for accepting idempotent leaderboard
 events and serving a reliable ranking. It focuses on the behaviour that tends to
